@@ -11,18 +11,19 @@ gameTitle = 'Platformer!'
 FPS = 60
 FONT_NAME = 'leelawadeeuisemilight'
 HS_SCORE = 'score.txt'
+SPRITESHEET = 'sprites.png'
 #player
 PLAYER_ACC = 0.5
 PLAYER_FRICTION = -0.06
 PLAYER_GRAVITY = 0.8
 PLAYER_JUMP = 20
 
-PLATFORM_LIST = [(0, HEIGHT - 40, WIDTH, 40),
-                 (WIDTH // 2 - 30, HEIGHT *3 /4, 100, 20),
-                 (WIDTH // 2, HEIGHT -350, 50, 20),
-                 (WIDTH - 200, HEIGHT -300, 70, 20),
-                 (WIDTH // 2, HEIGHT - 700, 100, 20),
-                 (WIDTH // 2, HEIGHT - 500, 100, 20)
+PLATFORM_LIST = [(0, HEIGHT - 40),
+                 (WIDTH // 2 - 30, HEIGHT *3 /4),
+                 (WIDTH // 2, HEIGHT -350),
+                 (WIDTH - 200, HEIGHT -300),
+                 (WIDTH // 2, HEIGHT - 700),
+                 (WIDTH // 2, HEIGHT - 500)
 
 
 ]
