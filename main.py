@@ -16,21 +16,29 @@ class Game:
         self.load_data()
 
     def run(self):
+        pg.mixer.music.play(loops =-1)
         self.playing = True
         while self.playing:
             self.clock.tick(FPS)
             self.update()
             self.events()
             self.draw()
+        pg.mixer.music.fadeout(1000)    
 
     def update(self):
         self.all_sprites.update()
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player, self.platforms, False)
             if hits:
-                self.player.pos.y = hits[0].rect.top
-                self.player.rect.midbottom = self.player.pos
-                self.player.vel.y = 0
+                lowest = hits[0]
+                for hit in hits:
+                    if hit.rect.bottom > lowest.rect.bottom:
+                        lowest = hit
+                if self.player.pos.y < lowest.rect.bottom:
+                    self.player.pos.y = lowest.rect.top
+                    self.player.rect.midbottom = self.player.pos
+                    self.player.vel.y = 0
+                    self.player.jumping = False
                 #Scroll window
         if self.player.rect.top <= HEIGHT / 4:
             self.player.pos.y += max(abs(self.player.vel.y), 2)
@@ -67,6 +75,7 @@ class Game:
             p = Platform(self, *plat)
             self.all_sprites.add(p)
             self.platforms.add(p)
+        pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))    
         g.run()
 
     def events(self):
@@ -77,14 +86,21 @@ class Game:
                 self.running = False
             if event.type == pg.KEYDOWN:
                if event.key == pg.K_SPACE:
-                   self.player.jump()       
+                   self.player.jump()
+                   
+            if event.type == pg.KEYUP:
+               if event.key == pg.K_SPACE:
+                   self.player.jump_cut()                          
         
     def draw(self):
         self.MAINWINDOW.fill(LIGHT_BLUE)
         self.all_sprites.draw(self.MAINWINDOW)
+        self.MAINWINDOW.blit(self.player.image, self.player.rect)
         self.draw_text(str(self.score), 22, BLACK, WIDTH // 2, 15)
         pg.display.flip()       
     def show_start_screen(self):
+        pg.mixer.music.load(path.join(self.sound_dir, 'menu.ogg'))
+        pg.mixer.music.play(loops=-1)
         self.MAINWINDOW.fill(SWAMP)
         self.draw_text(gameTitle, 48, WHITE, WIDTH // 2 , HEIGHT // 4)
         self.draw_text("Arrow keys to move, Space to jump" ,22 ,WHITE, WIDTH // 2 , HEIGHT // 2)
@@ -92,6 +108,7 @@ class Game:
         self.draw_text("High score : " + str(self.highscore), 22, WHITE, WIDTH // 2, 15)
         pg.display.flip()
         self.waitForKey()
+        pg.mixer.music.fadeout(1000)
 
     def show_go_screen(self):
         if not self.running:
@@ -139,7 +156,10 @@ class Game:
                 self.highscore = 0
     #sprites
         self.spritesheet = Spritesheet(path.join(img_dir, SPRITESHEET))
-
+    #sounds
+        self.sound_dir = path.join(self.dir, 'sound')
+        self.jump_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump2.wav'))
+        
     
 
 g = Game()
