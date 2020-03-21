@@ -34,11 +34,12 @@ class Game:
                 for hit in hits:
                     if hit.rect.bottom > lowest.rect.bottom:
                         lowest = hit
-                if self.player.pos.y < lowest.rect.bottom:
-                    self.player.pos.y = lowest.rect.top
-                    self.player.rect.midbottom = self.player.pos
-                    self.player.vel.y = 0
-                    self.player.jumping = False
+                if self.player.pos.x < lowest.rect.right + 5 and self.player.pos.x > lowest.rect.left - 5:         
+                    if self.player.pos.y < lowest.rect.bottom:
+                        self.player.pos.y = lowest.rect.top
+                        self.player.rect.midbottom = self.player.pos
+                        self.player.vel.y = 0
+                        self.player.jumping = False
                 #Scroll window
         if self.player.rect.top <= HEIGHT / 4:
             self.player.pos.y += max(abs(self.player.vel.y), 2)
@@ -47,6 +48,14 @@ class Game:
                 if plat.rect.top >= HEIGHT:
                     plat.kill()
                     self.score += 10
+        #POWERUP TIME BAYBEEEE
+        pow_hits = pg.sprite.spritecollide(self.player, self.powerups, True)
+        for pow in pow_hits:
+            if pow.type == 'boost':
+                self.boost_sound.play()
+                self.player.vel.y = -BOOST_POWER
+                self.player.jumping = False
+
 
         if self.player.rect.bottom > HEIGHT:
             for sprite in self.all_sprites:
@@ -58,10 +67,9 @@ class Game:
 
         while len(self.platforms) < 7:
             pwidth = random.randrange(30,100)
-            p = Platform(self, random.randrange(0, WIDTH - pwidth),
+            Platform(self, random.randrange(0, WIDTH - pwidth),
             random.randrange(-75, -30))
-            self.platforms.add(p)
-            self.all_sprites.add(p)
+
 
 
 
@@ -69,12 +77,10 @@ class Game:
         self.score = 0
         self.all_sprites = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
+        self.powerups = pg.sprite.Group()
         self.player = Player(self)
-        self.all_sprites.add(self.player)
         for plat in PLATFORM_LIST:
-            p = Platform(self, *plat)
-            self.all_sprites.add(p)
-            self.platforms.add(p)
+            Platform(self, *plat)
         pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))    
         g.run()
 
@@ -159,7 +165,7 @@ class Game:
     #sounds
         self.sound_dir = path.join(self.dir, 'sound')
         self.jump_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump2.wav'))
-        
+        self.boost_sound = pg.mixer.Sound(path.join(self.sound_dir, 'boost.wav'))
     
 
 g = Game()
