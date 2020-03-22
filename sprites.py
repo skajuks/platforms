@@ -1,6 +1,8 @@
 from settings import *
 import pygame as pg
 from random import choice, randrange
+from os import path
+
 
 
 vc = pg.math.Vector2
@@ -23,6 +25,7 @@ class Spritesheet:
 class Player(pg.sprite.Sprite):
 
     def __init__(self, game):
+        self._layer = PLAYER_LAYER
         self.groups = game.all_sprites
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -145,6 +148,7 @@ class Player(pg.sprite.Sprite):
 
 class Platform(pg.sprite.Sprite):
     def __init__(self, game , x, y):
+        self._layer = PLATFORM_LAYER
         self.groups = game.all_sprites, game.platforms
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -160,6 +164,7 @@ class Platform(pg.sprite.Sprite):
 
 class Powerup(pg.sprite.Sprite):
     def __init__(self, game , plat):
+        self._layer = POWERUP_LAYER
         self.groups = game.all_sprites, game.powerups
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -200,6 +205,7 @@ class Powerup(pg.sprite.Sprite):
 
 class Mob(pg.sprite.Sprite):
     def __init__(self, game , plat):
+        self._layer = MOB_LAYER
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
@@ -208,3 +214,36 @@ class Mob(pg.sprite.Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = choice([1,1])
+
+class Cloud(pg.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = CLOUD_LAYER
+        self.groups = game.all_sprites, game.clouds
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.image = choice(self.game.cloud_images)
+        self.image.set_colorkey(BLACK) 
+        self.rect = self.image.get_rect()
+        scale = randrange(50,101) /100
+        self.image = pg.transform.scale(self.image,(int(self.rect.width * scale), int(self.rect.height * scale)))
+        self.rect.x = randrange(WIDTH - self.rect.width)
+        self.rect.y = randrange(-500,-50)
+
+    def update(self):
+        if self.rect.top > HEIGHT * 2:
+            self.kill()
+
+class Background(pg.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = BACKGROUND_LAYER
+        self.groups = game.all_sprites, game.backgrounds
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.dir = path.dirname(__file__)
+        self.img_dir = path.join(self.dir, 'textures')
+        self.image = pg.image.load(path.join(self.img_dir, BCK)).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = -3200
+    def update(self):
+        pass    

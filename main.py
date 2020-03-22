@@ -10,9 +10,10 @@ class Game:
         pg.mixer.init()
         self.clock = pg.time.Clock()
         self.MAINWINDOW = pg.display.set_mode((WIDTH, HEIGHT))
-        pg.display.set_caption(gameTitle)
+        pg.display.set_caption(gameTitle + ' ' + str(round(self.clock.get_fps(), 1)))
         self.running = True
         self.font_name = pg.font.match_font(FONT_NAME)
+        
         self.load_data()
 
     def run(self):
@@ -27,6 +28,7 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
+
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player, self.platforms, False)
             if hits:
@@ -42,7 +44,17 @@ class Game:
                         self.player.jumping = False
                 #Scroll window
         if self.player.rect.top <= HEIGHT / 4:
+            if random.randrange(100) < CLOUD_FREQ:  # controls cloud freq
+                Cloud(self)
             self.player.pos.y += max(abs(self.player.vel.y), 2)
+            
+            for cloud in self.clouds:
+                cloud.rect.y += max(abs(self.player.vel.y / 2), 2)  # DIVIDE WITH LARGER NR FOR SLOWER SCROLL
+            for backg in self.backgrounds:
+                backg.rect.y -= (round(self.player.vel.y / 1000, 9))
+                self.scroll +=1
+                if self.scroll > 100:
+                    print('aaa')
             for plat in self.platforms:
                 plat.rect.y += max(abs(self.player.vel.y),2)
                 if plat.rect.top >= HEIGHT:
@@ -60,8 +72,11 @@ class Game:
         if self.player.rect.bottom > HEIGHT:
             for sprite in self.all_sprites:
                 sprite.rect.y -= max(self.player.vel.y, 10)
+                
                 if sprite.rect.bottom < 0:
                     sprite.kill()
+            for back in self.backgrounds:
+                back.rect.y = self.player.vel.y - 3200       
         if len(self.platforms) == 0:            
             self.playing = False 
 
@@ -74,14 +89,21 @@ class Game:
 
 
     def new(self):
+        self.scroll = 0
         self.score = 0
-        self.all_sprites = pg.sprite.Group()
+        self.all_sprites = pg.sprite.LayeredUpdates()
         self.platforms = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
+        self.clouds = pg.sprite.Group()
+        self.backgrounds = pg.sprite.Group()
         self.player = Player(self)
+        Background(self)        
         for plat in PLATFORM_LIST:
             Platform(self, *plat)
-        pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))    
+        pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))
+        for i in range(5):
+            c = Cloud(self)
+            c.rect.y += 500    
         g.run()
 
     def events(self):
@@ -99,9 +121,10 @@ class Game:
                    self.player.jump_cut()                          
         
     def draw(self):
+        #self.bimage = pg.image.load(path.join(self.img_dir, BCK)).convert_alpha()
         self.MAINWINDOW.fill(LIGHT_BLUE)
+        #self.MAINWINDOW.blit(self.bimage, [0,0])
         self.all_sprites.draw(self.MAINWINDOW)
-        self.MAINWINDOW.blit(self.player.image, self.player.rect)
         self.draw_text(str(self.score), 22, BLACK, WIDTH // 2, 15)
         pg.display.flip()       
     def show_start_screen(self):
@@ -154,14 +177,21 @@ class Game:
     def load_data(self):
         #load scoresheets
         self.dir = path.dirname(__file__)
-        img_dir = path.join(self.dir, 'textures')
+        self.img_dir = path.join(self.dir, 'textures')
         with open(path.join(self.dir, HS_SCORE), 'w') as f:
             try:
                 self.highscore = int(f.read())
             except:    
                 self.highscore = 0
     #sprites
-        self.spritesheet = Spritesheet(path.join(img_dir, SPRITESHEET))
+        self.spritesheet = Spritesheet(path.join(self.img_dir, SPRITESHEET))
+        self.background_sprites = Spritesheet(path.join(self.img_dir, BACKGROUND_SPRITES))
+        #self.MAINWINDOW.fill(path.join(img_dir, 'backg.png'))
+
+        self.cloud_images = []
+        for i in range(1,4):
+            self.cloud_images.append(pg.image.load(path.join(self.img_dir, 'cloud{}.png'.format(i))).convert())
+
     #sounds
         self.sound_dir = path.join(self.dir, 'sound')
         self.jump_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump2.wav'))
