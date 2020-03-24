@@ -1,0 +1,27 @@
+<TextureAtlas imagePath="sprites.png">
+	<SubTexture name="Attack (36x34)_01.png" x="70" y="83" width="32" height="29"/>
+	<SubTexture name="Attack (36x34)_02.png" x="0" y="54" width="34" height="27"/>
+	<SubTexture name="Attack (36x34)_03.png" x="0" y="27" width="36" height="25"/>
+	<SubTexture name="Attack (36x34)_04.png" x="0" y="0" width="36" height="25"/>
+	<SubTexture name="Attack (36x34)_05.png" x="0" y="27" width="36" height="25"/>
+	<SubTexture name="Attack (36x34)_06.png" x="134" y="89" width="28" height="32"/>
+	<SubTexture name="Attack (36x34)_07.png" x="104" y="89" width="28" height="30"/>
+	<SubTexture name="Attack (36x34)_08.png" x="104" y="58" width="30" height="29"/>
+	<SubTexture name="Bullet.png" x="0" y="114" width="8" height="9"/>
+	<SubTexture name="Flying (32x32)_01.png" x="72" y="58" width="30" height="23"/>
+	<SubTexture name="Flying (32x32)_02.png" x="72" y="0" width="31" height="23"/>
+	<SubTexture name="Flying (32x32)_03.png" x="38" y="0" width="32" height="20"/>
+	<SubTexture name="Flying (32x32)_04.png" x="38" y="22" width="32" height="20"/>
+	<SubTexture name="Flying (32x32)_05.png" x="136" y="56" width="26" height="28"/>
+	<SubTexture name="Flying (32x32)_06.png" x="10" y="112" width="4" height="8"/>
+	<SubTexture name="Flying (32x32)_07.png" x="136" y="0" width="27" height="26"/>
+	<SubTexture name="Flying (32x32)_08.png" x="136" y="0" width="27" height="26"/>
+	<SubTexture name="Flying (32x32)_09.png" x="136" y="0" width="27" height="26"/>
+	<SubTexture name="Flying (32x32)_10.png" x="136" y="28" width="27" height="26"/>
+	<SubTexture name="Idle (36x34)_01.png" x="70" y="83" width="32" height="29"/>
+	<SubTexture name="Idle (36x34)_02.png" x="36" y="54" width="34" height="27"/>
+	<SubTexture name="Idle (36x34)_03.png" x="0" y="83" width="34" height="27"/>
+	<SubTexture name="Idle (36x34)_04.png" x="36" y="83" width="32" height="29"/>
+	<SubTexture name="Idle (36x34)_05.png" x="104" y="25" width="30" height="31"/>
+	<SubTexture name="Idle (36x34)_06.png" x="72" y="25" width="30" height="31"/>
+</TextureAtlas>

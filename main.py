@@ -10,7 +10,7 @@ class Game:
         pg.mixer.init()
         self.clock = pg.time.Clock()
         self.MAINWINDOW = pg.display.set_mode((WIDTH, HEIGHT))
-        pg.display.set_caption(gameTitle + ' ' + str(round(self.clock.get_fps(), 1)))
+        
         self.running = True
         self.font_name = pg.font.match_font(FONT_NAME)
         
@@ -28,7 +28,21 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
-
+        #print(pg.time.get_ticks())
+        pg.display.set_caption(gameTitle + ' ' + str(round(self.clock.get_fps(), 1)))
+        now = pg.time.get_ticks()
+        if self.bee_spawn:
+            self.spawnchance = 1
+            if self.spawnchance > random.randrange(0,1000):
+                Bee(self)
+                self.spawnbee = now
+                self.bee_spawn = False
+        if now - self.mob_timer > 5000 + random.choice([-1000, -500, 0, 500, 1000]):
+            self.mob_timer = now
+            Mob(self)
+        mob_hits = pg.sprite.spritecollide(self.player, self.mobs, False)
+        if mob_hits:
+            self.playing = False
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player, self.platforms, False)
             if hits:
@@ -44,17 +58,21 @@ class Game:
                         self.player.jumping = False
                 #Scroll window
         if self.player.rect.top <= HEIGHT / 4:
-            if random.randrange(100) < CLOUD_FREQ:  # controls cloud freq
+            if random.randrange(self.cloudr) < CLOUD_FREQ:  # controls cloud freq
                 Cloud(self)
             self.player.pos.y += max(abs(self.player.vel.y), 2)
-            
+            for mob in self.mobs:
+                mob.rect.y += max(abs(self.player.vel.y), 2)
             for cloud in self.clouds:
                 cloud.rect.y += max(abs(self.player.vel.y / 2), 2)  # DIVIDE WITH LARGER NR FOR SLOWER SCROLL
             for backg in self.backgrounds:
                 backg.rect.y -= (round(self.player.vel.y / 1000, 9))
                 self.scroll +=1
-                if self.scroll > 100:
-                    print('aaa')
+                if self.scroll == 20:
+                    self.cloudr = 25
+                    print(self.scroll)
+            #for bee in self.bees:
+                #bee.rect.y += max(abs(self.player.vel.y), 2)        
             for plat in self.platforms:
                 plat.rect.y += max(abs(self.player.vel.y),2)
                 if plat.rect.top >= HEIGHT:
@@ -68,38 +86,60 @@ class Game:
                 self.player.vel.y = -BOOST_POWER
                 self.player.jumping = False
 
-
-        if self.player.rect.bottom > HEIGHT:
+        bul_hits = pg.sprite.spritecollide(self.player, self.bullets, False)
+        if bul_hits:
             for sprite in self.all_sprites:
-                sprite.rect.y -= max(self.player.vel.y, 10)
-                
-                if sprite.rect.bottom < 0:
-                    sprite.kill()
-            for back in self.backgrounds:
-                back.rect.y = self.player.vel.y - 3200       
+                sprite.kill()    
+            for bee in self.bees:
+                bee.kill()
+                self.bee_spawn = True
+            if len(self.platforms) == 0:            
+                self.playing = False            
+        if self.player.rect.bottom > HEIGHT:
+            self.hit()    
         if len(self.platforms) == 0:            
-            self.playing = False 
+            self.playing = False
+            
 
-        while len(self.platforms) < 7:
+        while len(self.platforms) < 8:
             pwidth = random.randrange(30,100)
             Platform(self, random.randrange(0, WIDTH - pwidth),
             random.randrange(-75, -30))
 
 
-
-
+    def hit(self):
+        for sprite in self.all_sprites:
+            sprite.rect.y -= max(self.player.vel.y, 10)
+                
+            if sprite.rect.bottom < 0:
+                sprite.kill()
+        for back in self.backgrounds:
+            back.rect.y += max(self.player.vel.y, 10)
+        for bee in self.bees:
+            bee.kill()
+            self.bee_spawn = True   
+        #pg.quit()
     def new(self):
+        pygame.init()
+        self.cloudr = 100
         self.scroll = 0
+        self.mob_timer = 0
         self.score = 0
+        self.bee_spawn = True
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.platforms = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
         self.clouds = pg.sprite.Group()
-        self.backgrounds = pg.sprite.Group()
+        self.mobs  = pg.sprite.Group()
+        self.backgrounds = pg.sprite.Group()     
+        self.bees = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
         self.player = Player(self)
+        
         Background(self)        
         for plat in PLATFORM_LIST:
             Platform(self, *plat)
+           
         pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))
         for i in range(5):
             c = Cloud(self)
@@ -185,7 +225,7 @@ class Game:
                 self.highscore = 0
     #sprites
         self.spritesheet = Spritesheet(path.join(self.img_dir, SPRITESHEET))
-        self.background_sprites = Spritesheet(path.join(self.img_dir, BACKGROUND_SPRITES))
+        self.mob_sprites = Spritesheet(path.join(self.img_dir, MOB_SPRITES))
         #self.MAINWINDOW.fill(path.join(img_dir, 'backg.png'))
 
         self.cloud_images = []

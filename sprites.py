@@ -2,6 +2,7 @@ from settings import *
 import pygame as pg
 from random import choice, randrange
 from os import path
+import time
 
 
 
@@ -21,7 +22,16 @@ class Spritesheet:
         image.blit(self.spritesheet, (0,0), (x,y,width,height))
         image = pg.transform.scale(image, (width // 2 - 20, height // 2 - 20))
         return image
-
+    def get_bee(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x,y,width,height))
+        image = pg.transform.scale(image, (width * 2 + 20, height * 2 + 20))
+        return image            
+    def get_bee_bullet(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x,y,width,height))
+        image = pg.transform.scale(image, (width * 2 +5, height * 2 +5 ))
+        return image
 class Player(pg.sprite.Sprite):
 
     def __init__(self, game):
@@ -204,16 +214,58 @@ class Powerup(pg.sprite.Sprite):
                 self.rect.bottom = self.plat.rect.top 
 
 class Mob(pg.sprite.Sprite):
-    def __init__(self, game , plat):
+    def __init__(self, game):
         self._layer = MOB_LAYER
         self.groups = game.all_sprites, game.mobs
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
-        self.plat = plat
-        self.image = self.game.spritesheet.get_image(203,136,43,43)
-        self.image.set_colorkey(BLACK)
+        self.load_images()
+        self.current_frame = 0
+        self.last_update = 0 
+        self.image = self.bird_img[0]
         self.rect = self.image.get_rect()
-        self.rect.centerx = choice([1,1])
+        self.rect.centerx = WIDTH + 100
+        self.vx = randrange(1, 3)
+        if self.rect.centerx > WIDTH:
+            self.vx *= -1
+        self.rect.y = randrange(HEIGHT / 2)
+        self.vy = 0
+        self.dy = 0.5
+
+    def update(self):
+        self.animate()
+        self.rect.x += self.vx
+        self.vy += self.dy
+        if self.vy > 3 or self.vy < -3:
+            self.dy *= -1
+        center = self.rect.center
+        self.rect = self.image.get_rect()
+        self.rect.center = center
+        self.rect.y += self.vy
+        if self.rect.left > WIDTH + 100 or self.rect.right < -100:
+            self.kill()       # MAKE BLUE BIRD MOB!
+
+    def load_images(self):
+        self.bird_img = [
+            self.game.mob_sprites.get_image(72,58,30,23),
+            self.game.mob_sprites.get_image(72,0,31,23),
+            self.game.mob_sprites.get_image(38,0,32,20),
+            self.game.mob_sprites.get_image(38,22,32,20),
+            self.game.mob_sprites.get_image(136,56,26,28),
+            self.game.mob_sprites.get_image(136,0,27,26),
+            self.game.mob_sprites.get_image(136,0,27,26),
+            self.game.mob_sprites.get_image(136,28,27,26)    
+        ]
+        for frame in self.bird_img:
+            frame.set_colorkey(BLACK)
+    def animate(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update > 60:
+                self.last_update = now
+                self.current_frame = (self.current_frame + 1) % len(self.bird_img)
+                self.image = self.bird_img[self.current_frame]
+
+
 
 class Cloud(pg.sprite.Sprite):
     def __init__(self, game):
@@ -247,3 +299,113 @@ class Background(pg.sprite.Sprite):
         self.rect.y = -3200
     def update(self):
         pass    
+
+class Bee(pg.sprite.Sprite):
+    def __init__(self,game):
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.bees
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.current_frame = 0
+        self.last_update = 0 
+        self.load_images()
+        self.bullet_ratio = 0.5
+        self.image = self.fly_frames[0]
+        self.rect = self.image.get_rect()
+        self.rect.x = WIDTH // 2
+        self.vx = 3
+        self.rect.y = 15  
+        self.attack = False             
+
+
+        #self.rect.x = self.game.WIDTH // 2
+
+    def load_images(self):
+        self.fly_frames = [
+            self.game.mob_sprites.get_bee(70,83,32,29),
+            self.game.mob_sprites.get_bee(36,54,34,27),
+            self.game.mob_sprites.get_bee(0,83,34,27),
+            self.game.mob_sprites.get_bee(36,83,32,29),
+            self.game.mob_sprites.get_bee(104,25,30,31),
+            self.game.mob_sprites.get_bee(72,25,30,31)
+        ]
+        for frame in self.fly_frames:
+            frame.set_colorkey(BLACK)
+
+        self.attack_frames = [
+            self.game.mob_sprites.get_bee(70,83,32,29),
+            self.game.mob_sprites.get_bee(0,54,34,27),
+            self.game.mob_sprites.get_bee(0,27,36,25),
+            self.game.mob_sprites.get_bee(0,0,36,25),
+            self.game.mob_sprites.get_bee(0,27,36,25),
+            self.game.mob_sprites.get_bee(134,89,28,32),
+            self.game.mob_sprites.get_bee(104,89,28,30),
+            self.game.mob_sprites.get_bee(104,58,30,29)
+        ]   
+        for frame in self.attack_frames:
+            frame.set_colorkey(BLACK)         
+    def update(self):
+        self.animate()
+        self.rect.x += self.vx
+        #self.rect.x += self.vx
+        if self.rect.right > WIDTH:
+            self.vx = -3
+        if self.rect.left < 0:
+            self.vx = 3    
+        #if self.game.player.rect.x + 30 >= self.rect.x >= self.game.player.rect.x - 30:
+        if not self.bullet_ratio < randrange(0,100):
+            self.attack = True
+            self.shoot()
+        if self.image == self.attack_frames[7]:
+            self.attack = False  
+        if len(self.game.bees) > 0:
+           self.t1 = round(time.time(),0)
+           now = pg.time.get_ticks()
+           if self.game.spawnbee + 10000 < now:
+               self.bee_die()
+               self.game.spawnbee = now
+    def bee_die(self):
+        self.kill()
+        self.game.bee_spawn = True
+    def animate(self):
+        if not self.attack:
+            now = pg.time.get_ticks()
+            if now - self.last_update > 250:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.fly_frames)
+                    self.image = self.fly_frames[self.current_frame]
+                    #self.rect = self.image.get_rect()
+        if self.attack:
+            now = pg.time.get_ticks()
+            if now - self.last_update > 40:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.attack_frames)
+                    self.image = self.attack_frames[self.current_frame]            
+
+    def shoot(self):
+        print('TARGET')
+        bullet = Bullet(self.game,self.rect.centerx, self.rect.bottom)
+
+            
+        #self.game.bullets.add(bullet)
+
+
+class Bullet(pg.sprite.Sprite):
+    def __init__(self,game, x, y):
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.bullets
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.x = x
+        self.y = y
+        self.image = self.game.mob_sprites.get_bee_bullet(0,114,8,9)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.centery = y
+        self.rect.centerx = x
+        self.speedy = 5
+
+    def update(self):
+        self.rect.y +=self.speedy
+        if self.rect.bottom > HEIGHT:
+            self.kill()        

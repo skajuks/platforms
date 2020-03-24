@@ -13,7 +13,7 @@ FONT_NAME = 'leelawadeeuisemilight'
 HS_SCORE = 'score.txt'
 SPRITESHEET = 'sprites.png'
 BCK = 'bg.png'
-BACKGROUND_SPRITES = 'bsprites.png'
+MOB_SPRITES = 'mobsprites.png'
 #player
 PLAYER_ACC = 0.5
 PLAYER_FRICTION = -0.06
