@@ -42,7 +42,18 @@ class Game:
             Mob(self)
         mob_hits = pg.sprite.spritecollide(self.player, self.mobs, False)
         if mob_hits:
-            self.playing = False
+            for mob in self.mobs:
+                print(mob.rect.top, self.player.rect.bottom)
+                if self.player.rect.bottom - 20 < mob.rect.top:     # REDO
+                    #print('RANGE')
+                    self.player.vel.y = -40
+                                     
+                    #print('asdasdasdas')
+                if self.player.rect.top < mob.rect.bottom: 
+                    self.playing = False   
+                else:    
+                    self.playing = False
+            mob.kill()        
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player, self.platforms, False)
             if hits:
@@ -57,6 +68,8 @@ class Game:
                         self.player.vel.y = 0
                         self.player.jumping = False
                 #Scroll window
+
+
         if self.player.rect.top <= HEIGHT / 4:
             if random.randrange(self.cloudr) < CLOUD_FREQ:  # controls cloud freq
                 Cloud(self)
@@ -72,18 +85,33 @@ class Game:
                     self.cloudr = 25
                     print(self.scroll)
             #for bee in self.bees:
-                #bee.rect.y += max(abs(self.player.vel.y), 2)        
+                #bee.rect.y += max(abs(self.player.vel.y), 2)    #        
             for plat in self.platforms:
+ 
                 plat.rect.y += max(abs(self.player.vel.y),2)
-                if plat.rect.top >= HEIGHT:
+                if plat.type == 'moving':
+                    plat.rect.x += plat.vx
+                    if plat.rect.right > WIDTH:
+                        plat.vx = -3
+                    if plat.rect.left < 0:
+                        plat.vx = 3
+                if plat.type == 'ice':
+                    pass
+                if plat.rect.top >= HEIGHT + 200:
                     plat.kill()
                     self.score += 10
         #POWERUP TIME BAYBEEEE
-        pow_hits = pg.sprite.spritecollide(self.player, self.powerups, True)
+        pow_hits = pg.sprite.spritecollide(self.player, self.powerups, True, pg.sprite.collide_mask)
         for pow in pow_hits:
             if pow.type == 'boost':
                 self.boost_sound.play()
-                self.player.vel.y = -BOOST_POWER
+                self.player.vel.y = -FAN_BOOST_POWER
+                self.player.jumping = False
+            if pow.type == 'saw':
+                self.playing = False
+            if pow.type == 'jump':
+                self.jboost_sound.play()
+                self.player.vel.y = -(FAN_BOOST_POWER + 30)
                 self.player.jumping = False
 
         bul_hits = pg.sprite.spritecollide(self.player, self.bullets, False)
@@ -101,7 +129,7 @@ class Game:
             self.playing = False
             
 
-        while len(self.platforms) < 8:
+        while len(self.platforms) < 10:
             pwidth = random.randrange(30,100)
             Platform(self, random.randrange(0, WIDTH - pwidth),
             random.randrange(-75, -30))
@@ -128,9 +156,10 @@ class Game:
         self.bee_spawn = True
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.platforms = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
         self.powerups = pg.sprite.Group()
         self.clouds = pg.sprite.Group()
-        self.mobs  = pg.sprite.Group()
+        self.misc = pg.sprite.Group()
         self.backgrounds = pg.sprite.Group()     
         self.bees = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
@@ -139,7 +168,10 @@ class Game:
         Background(self)        
         for plat in PLATFORM_LIST:
             Platform(self, *plat)
-           
+        for plat in self.platforms:
+            plat.type = 'static'
+            if self.platforms.has(self.powerups):
+                self.powerups.kill()    
         pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))
         for i in range(5):
             c = Cloud(self)
@@ -226,6 +258,8 @@ class Game:
     #sprites
         self.spritesheet = Spritesheet(path.join(self.img_dir, SPRITESHEET))
         self.mob_sprites = Spritesheet(path.join(self.img_dir, MOB_SPRITES))
+        self.misc_sprites = Spritesheet(path.join(self.img_dir, MISC_SPRITES))
+        self.jump_sprites = Spritesheet(path.join(self.img_dir, JUMP_SPRITES))
         #self.MAINWINDOW.fill(path.join(img_dir, 'backg.png'))
 
         self.cloud_images = []
@@ -236,6 +270,8 @@ class Game:
         self.sound_dir = path.join(self.dir, 'sound')
         self.jump_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump2.wav'))
         self.boost_sound = pg.mixer.Sound(path.join(self.sound_dir, 'boost.wav'))
+        self.shoot_sound = pg.mixer.Sound(path.join(self.sound_dir, 'shoot.wav'))
+        self.jboost_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump_boost.wav'))
     
 
 g = Game()

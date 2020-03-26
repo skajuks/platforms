@@ -1,0 +1,16 @@
+<TextureAtlas imagePath="sprites.png">
+	<SubTexture name="Trees_Alt_Outlined_01.png" x="77" y="109" width="70" height="88"/>
+	<SubTexture name="Trees_Alt_Outlined_02.png" x="0" y="0" width="85" height="107"/>
+	<SubTexture name="Trees_Alt_Outlined_03.png" x="0" y="109" width="75" height="104"/>
+	<SubTexture name="Trees_Alt_Outlined_04.png" x="149" y="0" width="66" height="128"/>
+	<SubTexture name="Trees_Alt_Outlined_05.png" x="149" y="130" width="66" height="99"/>
+	<SubTexture name="Trees_Alt_Outlined_06.png" x="217" y="0" width="61" height="88"/>
+	<SubTexture name="Trees_Alt_Outlined_07.png" x="87" y="78" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_08.png" x="102" y="216" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_09.png" x="34" y="231" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_10.png" x="0" y="231" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_11.png" x="68" y="231" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_12.png" x="87" y="60" width="32" height="16"/>
+	<SubTexture name="Trees_Alt_Outlined_13.png" x="77" y="199" width="32" height="15"/>
+	<SubTexture name="Trees_Alt_Outlined_14.png" x="87" y="0" width="43" height="58"/>
+</TextureAtlas>

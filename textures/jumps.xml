@@ -1,0 +1,11 @@
+<TextureAtlas imagePath="sprites.png">
+	<SubTexture name="Idle.png" x="0" y="105" width="23" height="11"/>
+	<SubTexture name="Jump (28x28)_01.png" x="0" y="10" width="25" height="8"/>
+	<SubTexture name="Jump (28x28)_02.png" x="0" y="76" width="23" height="27"/>
+	<SubTexture name="Jump (28x28)_03.png" x="0" y="48" width="23" height="26"/>
+	<SubTexture name="Jump (28x28)_04.png" x="25" y="20" width="23" height="22"/>
+	<SubTexture name="Jump (28x28)_05.png" x="0" y="20" width="23" height="14"/>
+	<SubTexture name="Jump (28x28)_06.png" x="0" y="0" width="27" height="8"/>
+	<SubTexture name="Jump (28x28)_07.png" x="0" y="0" width="27" height="8"/>
+	<SubTexture name="Jump (28x28)_08.png" x="0" y="36" width="23" height="10"/>
+</TextureAtlas>

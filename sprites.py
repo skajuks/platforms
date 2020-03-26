@@ -32,6 +32,15 @@ class Spritesheet:
         image.blit(self.spritesheet, (0,0), (x,y,width,height))
         image = pg.transform.scale(image, (width * 2 +5, height * 2 +5 ))
         return image
+    def get_asset(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x,y,width,height))
+        image = pg.transform.scale(image, (width // 2, height // 2))
+        return image
+    def origin(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x,y,width,height))
+        return image         
 class Player(pg.sprite.Sprite):
 
     def __init__(self, game):
@@ -162,18 +171,49 @@ class Platform(pg.sprite.Sprite):
         self.groups = game.all_sprites, game.platforms
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
+        self.type = 'static'
         images = [self.game.spritesheet.get_platform(0,0,380,94), self.game.spritesheet.get_platform(0,96,201,100)]
-        self.image = choice(images)
+        moving_images = [pg.image.load(path.join(self.game.img_dir, 'move.png'))]
+        #self.type = choice(['normal', 'moving'])
+        if MOVE_PLAT_CHANCE > randrange(0,20):
+            self.image = choice(moving_images)
+            self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
+            self.type = 'moving'
+        elif MOVE_PLAT_CHANCE > randrange(0,10):
+            self.image = choice([pg.image.load(path.join(self.game.img_dir, 'snow1.png'))]) 
+            self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
+            self.type = 'ice' 
+        else:
+            self.image = choice(images)
         self.image.set_colorkey(BLACK)
         #self.image = pg.transform.scale(images, (380 // 2 - 10 , 94 // 2 - 10))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.vx = randrange(1,5)
+        
         if randrange(100) < POWERUP_FREQ:
             Powerup(self.game, self)
+        if self.rect.width > 100:    
+            if randrange(100) < 25 and self.type == 'static':
+                Misc(self.game, self)
+        if self.rect.width > 100:    
+            if randrange(100) < 5 and self.type == 'static':
+                Saw(self.game, self)        
+
+    def update(self):
+        if self.type == 'moving':
+           self.rect.x += self.vx
+        #self.rect.x += self.vx
+           if self.rect.right > WIDTH:
+                self.vx = -3
+           if self.rect.left < 0:
+                self.vx = 3       
+
+
 
 class Powerup(pg.sprite.Sprite):
-    def __init__(self, game , plat):
+    def __init__(self, game , plat):                # WORK ON ADDING SHIELDS
         self._layer = POWERUP_LAYER
         self.groups = game.all_sprites, game.powerups
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -182,8 +222,11 @@ class Powerup(pg.sprite.Sprite):
         self.last_update = 0 
         self.load_images()       
         self.plat = plat
-        self.type = choice(['boost'])
-        self.image = self.fan_frames[0]
+        self.type = choice(['boost', 'jump'])
+        if self.type == 'boost':
+            self.image = self.fan_frames[0]
+        if self.type == 'jump':
+            self.image = self.jump_frames[0]   
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = self.plat.rect.centerx
@@ -203,16 +246,36 @@ class Powerup(pg.sprite.Sprite):
         ]
         for frame in self.fan_frames:
             frame.set_colorkey(BLACK)
-    def animate(self):
-        now = pg.time.get_ticks()
-        if now - self.last_update > 60:
-                self.last_update = now
-                self.current_frame = (self.current_frame + 1) % len(self.fan_frames)
-                self.image = self.fan_frames[self.current_frame]
-                self.rect = self.image.get_rect()
-                self.rect.centerx = self.plat.rect.centerx
-                self.rect.bottom = self.plat.rect.top 
+        self.jump_frames = [self.game.jump_sprites.get_image(0,10,25,8),
+        self.game.jump_sprites.get_image(0,76,23,27),
+        self.game.jump_sprites.get_image(0,48,23,26),
+        self.game.jump_sprites.get_image(25,20,23,22),
+        self.game.jump_sprites.get_image(0,20,23,14),
+        self.game.jump_sprites.get_image(0,0,27,8),
+        self.game.jump_sprites.get_image(0,0,27,8),
+        self.game.jump_sprites.get_image(0,36,23,10)]
+        for frame in self.jump_frames:
+            frame.set_colorkey(BLACK)            
 
+    def animate(self):
+        if self.type == 'boost':
+            now = pg.time.get_ticks()
+            if now - self.last_update > 60:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.fan_frames)
+                    self.image = self.fan_frames[self.current_frame]
+                    self.rect = self.image.get_rect()
+                    self.rect.centerx = self.plat.rect.centerx
+                    self.rect.bottom = self.plat.rect.top 
+        if self.type == 'jump':
+            now = pg.time.get_ticks()
+            if now - self.last_update > 40:
+                    self.last_update = now
+                    self.current_frame = (self.current_frame + 1) % len(self.jump_frames)
+                    self.image = self.jump_frames[self.current_frame]
+                    self.rect = self.image.get_rect()
+                    self.rect.centerx = self.plat.rect.centerx
+                    self.rect.bottom = self.plat.rect.top
 class Mob(pg.sprite.Sprite):
     def __init__(self, game):
         self._layer = MOB_LAYER
@@ -385,6 +448,7 @@ class Bee(pg.sprite.Sprite):
     def shoot(self):
         print('TARGET')
         bullet = Bullet(self.game,self.rect.centerx, self.rect.bottom)
+        self.game.shoot_sound.play()
 
             
         #self.game.bullets.add(bullet)
@@ -408,4 +472,65 @@ class Bullet(pg.sprite.Sprite):
     def update(self):
         self.rect.y +=self.speedy
         if self.rect.bottom > HEIGHT:
-            self.kill()        
+            self.kill()    
+
+class Misc(pg.sprite.Sprite):
+    def __init__(self, game , plat):              
+        self._layer = PLATFORM_LAYER
+        self.groups = game.all_sprites, game.misc
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.plat = plat
+        self.image = choice([self.game.misc_sprites.get_image(149,0,66,128),self.game.misc_sprites.get_image(217,0,61,88),self.game.misc_sprites.get_image(77,109,70,88),self.game.misc_sprites.get_image(0,0,85,107),self.game.misc_sprites.get_image(0,109,75,104)])         
+        #self.game.misc_sprites.get_asset(242,0,220,256), self.game.misc_sprites.origin(224,427,26,29),
+        #self.game.misc_sprites.get_asset(151,360,74,37)])
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = randrange(self.plat.rect.left + 30, self.plat.rect.right - 30)
+        self.rect.bottom = self.plat.rect.top
+    def update(self):
+        self.rect.bottom = self.plat.rect.top
+        if not self.game.platforms.has(self.plat):
+            self.kill()
+class Saw(pg.sprite.Sprite):
+    def __init__(self, game , plat):              
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.powerups
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.current_frame = 0
+        self.last_update = 0 
+        self.plat = plat
+        self.type = 'saw'
+        self.load_images()
+        self.image = self.saw_frames[0]
+        #self.image = pg.transform.rotate(self.image, 180)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.plat.rect.centerx
+        self.rect.y = self.plat.rect.top
+
+    def load_images(self):
+        self.saw_frames = [
+                self.game.spritesheet.origin(0,198,76,38),
+                self.game.spritesheet.origin(156,198,76,38),
+                self.game.spritesheet.origin(203,96,76,38),
+                self.game.spritesheet.origin(78,198,76,38)    
+            ]
+        for frame in self.saw_frames:
+            frame.set_colorkey(BLACK)
+           
+    def update(self):
+        self.animate()
+        self.rect.centery = self.plat.rect.top + 10
+        if not self.game.platforms.has(self.plat):
+            self.kill()
+
+    def animate(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update > 60:
+            self.last_update = now
+            self.current_frame = (self.current_frame + 1) % len(self.saw_frames)
+            self.image = self.saw_frames[self.current_frame]
+
+class Ghost(pg.sprite.Sprite):
+   pass 
