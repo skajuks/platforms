@@ -4,6 +4,14 @@ import math, random, sys
 from sprites import *
 from os import path
 
+
+#T O DO
+#ADD METEORS WITH RANDOM SPOTS
+#SCROLLING BACKGROUND CHANGES --- WHEN BACKGROUND TOP STARTS TO REACH BOTTOM NEW BACKGROUND IS SPAWNED ON TOP OF IT AND WHEN
+#OLD ONE REACHES BOTTOM IT GETS DELETED
+#REMOVE TREES FOR OTHER DETAILS
+#REWORK PLATFORM TEXTURES- DONE!
+#ADD HEALTH    - DONEE!
 class Game:
     def __init__(self):
         pg.init()
@@ -40,25 +48,42 @@ class Game:
         if now - self.mob_timer > 5000 + random.choice([-1000, -500, 0, 500, 1000]):
             self.mob_timer = now
             Mob(self)
-        mob_hits = pg.sprite.spritecollide(self.player, self.mobs, False)
+        mob_hits = pg.sprite.spritecollide(self.player, self.mobs, False)   
         if mob_hits:
-            for mob in self.mobs:
-                print(mob.rect.top, self.player.rect.bottom)
-                if self.player.rect.bottom - 20 < mob.rect.top:     # REDO
-                    #print('RANGE')
-                    self.player.vel.y = -40
-                                     
-                    #print('asdasdasdas')
-                if self.player.rect.top < mob.rect.bottom: 
-                    self.playing = False   
-                else:    
+            lowest = mob_hits[0]
+            for hit in mob_hits:
+                if hit.rect.bottom > lowest.rect.bottom:
+                    lowest = hit  
+            if self.player.rect.bottom + 5 > lowest.rect.top and lowest.rect.top - 5 < self.player.rect.bottom and self.player.rect.bottom < lowest.rect.centery: 
+                # kinda works now
+                self.player.rect.bottom = lowest.rect.top + 20 
+                self.player.vel.y = -40
+                lowest.kill()                 
+            else:
+                if len(self.health) == 0:    
                     self.playing = False
-            mob.kill()        
+                else:
+                    for x in self.health:
+                        for i in self.health:
+                            if i.rect.left > x.rect.left:
+                                x = i
+                    i.kill()
+                    self.player.healthpool -=1
+                    lowest.kill()       
+        #for plat in self.platforms:
+           # hit = pg.sprite.spritecollide(plat, self.platforms, False)
+            #for hits in hit:
+                #if hit != plat:
+
+                    #print('asdasdasdasdasdsa')  
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player, self.platforms, False)
             if hits:
                 lowest = hits[0]
                 for hit in hits:
+                    print(hit.type)
+                    if hit.type == 'bee':
+                        lowest.rect.top +=4
                     if hit.rect.bottom > lowest.rect.bottom:
                         lowest = hit
                 if self.player.pos.x < lowest.rect.right + 5 and self.player.pos.x > lowest.rect.left - 5:         
@@ -67,8 +92,10 @@ class Game:
                         self.player.rect.midbottom = self.player.pos
                         self.player.vel.y = 0
                         self.player.jumping = False
+
                 #Scroll window
 
+        
 
         if self.player.rect.top <= HEIGHT / 4:
             if random.randrange(self.cloudr) < CLOUD_FREQ:  # controls cloud freq
@@ -84,10 +111,17 @@ class Game:
                 if self.scroll == 20:
                     self.cloudr = 25
                     print(self.scroll)
+            for tree in self.misc:
+                tree.rect.y += max(abs(self.player.vel.y), 2)       
             #for bee in self.bees:
                 #bee.rect.y += max(abs(self.player.vel.y), 2)    #        
             for plat in self.platforms:
- 
+                #col = pg.sprite.spritecollide(plat, self.platforms, False)
+                #if col:
+
+                    #plat.kill()
+                #if pg.sprite.spritecollide(plat, self.platforms, False, pg.sprite.collide_rect):
+                    #print(plat.rect)
                 plat.rect.y += max(abs(self.player.vel.y),2)
                 if plat.type == 'moving':
                     plat.rect.x += plat.vx
@@ -95,11 +129,11 @@ class Game:
                         plat.vx = -3
                     if plat.rect.left < 0:
                         plat.vx = 3
-                if plat.type == 'ice':
-                    pass
                 if plat.rect.top >= HEIGHT + 200:
                     plat.kill()
                     self.score += 10
+
+
         #POWERUP TIME BAYBEEEE
         pow_hits = pg.sprite.spritecollide(self.player, self.powerups, True, pg.sprite.collide_mask)
         for pow in pow_hits:
@@ -113,9 +147,27 @@ class Game:
                 self.jboost_sound.play()
                 self.player.vel.y = -(FAN_BOOST_POWER + 30)
                 self.player.jumping = False
-
+            if pow.type == 'bee':
+                pass
+            if pow.type == 'health':
+                if self.player.healthpool >= MAX_HEALTH:
+                    pass
+                else:
+                    self.player.healthpool = self.player.healthpool + 1               
         bul_hits = pg.sprite.spritecollide(self.player, self.bullets, False)
         if bul_hits:
+            lowest = bul_hits[0]
+            for hit in bul_hits:
+                if hit.rect.bottom > lowest.rect.bottom:
+                    lowest = hit
+            hit.kill()        
+            for x in self.health:
+                for i in self.health:
+                    if i.rect.left > x.rect.left:
+                        x = i
+            i.kill()
+            self.player.healthpool -=1             
+        if bul_hits and len(self.health) == 0:
             for sprite in self.all_sprites:
                 sprite.kill()    
             for bee in self.bees:
@@ -133,7 +185,26 @@ class Game:
             pwidth = random.randrange(30,100)
             Platform(self, random.randrange(0, WIDTH - pwidth),
             random.randrange(-75, -30))
-
+            for plat in self.platforms:
+                #print(plat.rect)
+                if plat.rect.colliderect(plat.rect):                # FIX
+                    pass#print('sss')
+        if len(self.health) < self.player.healthpool:
+            Health(self)
+            count = -20
+            for h in self.health:
+                count += 40
+                h.rect.left = count
+        for hp in self.health:
+            hp.rect.top = 20        
+        if self.player.healthpool == 0 or len(self.health) == 0:
+            for sprite in self.all_sprites:
+                sprite.kill()    
+            for bee in self.bees:
+                bee.kill()
+                self.bee_spawn = True        
+            self.playing = False    
+                            
 
     def hit(self):
         for sprite in self.all_sprites:
@@ -164,14 +235,16 @@ class Game:
         self.bees = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.player = Player(self)
-        
-        Background(self)        
-        for plat in PLATFORM_LIST:
+        self.health = pg.sprite.Group()
+        Background(self)
+        Health(self)          
+        for plat in PLATFORM_LIST:          # SPAWN STARTING PLATS ALWAYS THE SAME
             Platform(self, *plat)
         for plat in self.platforms:
             plat.type = 'static'
             if self.platforms.has(self.powerups):
-                self.powerups.kill()    
+                self.powerups.kill()
+                  
         pg.mixer.music.load(path.join(self.sound_dir, 'soundtrack.wav'))
         for i in range(5):
             c = Cloud(self)
@@ -197,7 +270,9 @@ class Game:
         self.MAINWINDOW.fill(LIGHT_BLUE)
         #self.MAINWINDOW.blit(self.bimage, [0,0])
         self.all_sprites.draw(self.MAINWINDOW)
-        self.draw_text(str(self.score), 22, BLACK, WIDTH // 2, 15)
+        self.draw_text(str(self.score), 40, WHITE, WIDTH // 2, 15)
+   
+
         pg.display.flip()       
     def show_start_screen(self):
         pg.mixer.music.load(path.join(self.sound_dir, 'menu.ogg'))
@@ -229,7 +304,7 @@ class Game:
         self.waitForKey()
 
     def draw_text(self, text, size, color, x, y):
-        font = pg.font.Font(self.font_name , size)
+        font = pg.font.Font(path.join(self.dir, 'bit5x3.TTF') , size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x, y)
@@ -272,7 +347,8 @@ class Game:
         self.boost_sound = pg.mixer.Sound(path.join(self.sound_dir, 'boost.wav'))
         self.shoot_sound = pg.mixer.Sound(path.join(self.sound_dir, 'shoot.wav'))
         self.jboost_sound = pg.mixer.Sound(path.join(self.sound_dir, 'jump_boost.wav'))
-    
+
+
 
 g = Game()
 g.show_start_screen()

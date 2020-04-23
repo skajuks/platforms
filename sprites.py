@@ -1,6 +1,7 @@
 from settings import *
 import pygame as pg
 from random import choice, randrange
+import random
 from os import path
 import time
 
@@ -40,7 +41,12 @@ class Spritesheet:
     def origin(self, x, y, width, height):
         image = pg.Surface((width, height))
         image.blit(self.spritesheet, (0,0), (x,y,width,height))
-        return image         
+        return image 
+    def get_tree(self, x, y, width, height):
+        image = pg.Surface((width, height))
+        image.blit(self.spritesheet, (0,0), (x,y,width,height))
+        image = pg.transform.scale(image, (width * 2 - 60, height * 2 - 60))
+        return image            
 class Player(pg.sprite.Sprite):
 
     def __init__(self, game):
@@ -63,6 +69,7 @@ class Player(pg.sprite.Sprite):
         self.pos = vc(20, HEIGHT - 100)
         self.vel = vc(0,0)
         self.acc = vc(0,0)
+        self.healthpool = 1
 
 
 
@@ -74,6 +81,8 @@ class Player(pg.sprite.Sprite):
             self.acc.x = -PLAYER_ACC
         if keys[pg.K_RIGHT] or keys[ord('d')]:
             self.acc.x = PLAYER_ACC
+        if keys[pg.K_DOWN] or keys[ord('s')]:
+            self.pos.y +=30    
 
         self.acc.x += self.vel.x * PLAYER_FRICTION  #friction
         self.vel += self.acc
@@ -172,20 +181,27 @@ class Platform(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.type = 'static'
-        images = [self.game.spritesheet.get_platform(0,0,380,94), self.game.spritesheet.get_platform(0,96,201,100)]
+        images = [pg.image.load(path.join(self.game.img_dir, 'static1.png')), pg.image.load(path.join(self.game.img_dir, 'static2.png'))]#, self.game.spritesheet.get_platform(0,96,201,100)]
         moving_images = [pg.image.load(path.join(self.game.img_dir, 'move.png'))]
         #self.type = choice(['normal', 'moving'])
         if MOVE_PLAT_CHANCE > randrange(0,20):
             self.image = choice(moving_images)
             self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
             self.type = 'moving'
+
         elif MOVE_PLAT_CHANCE > randrange(0,10):
-            self.image = choice([pg.image.load(path.join(self.game.img_dir, 'snow1.png'))]) 
+            self.image = choice([pg.image.load(path.join(self.game.img_dir, 'beeplt.png'))]) 
             self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
-            self.type = 'ice' 
+            self.type = 'bee' 
+
         else:
             self.image = choice(images)
-        self.image.set_colorkey(BLACK)
+            if self.image == images[0]:
+                self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
+            else:
+                self.image = pg.transform.scale(self.image, (216 // 2 - 20, 94 // 2 - 20))    
+            self.image.set_colorkey(BLACK)
+        
         #self.image = pg.transform.scale(images, (380 // 2 - 10 , 94 // 2 - 10))
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -198,18 +214,28 @@ class Platform(pg.sprite.Sprite):
             if randrange(100) < 25 and self.type == 'static':
                 Misc(self.game, self)
         if self.rect.width > 100:    
-            if randrange(100) < 5 and self.type == 'static':
-                Saw(self.game, self)        
+            if randrange(100) < 5 and (self.type == 'static' or self.type == 'bee'):
+                Saw(self.game, self)               
 
     def update(self):
+        self.reset_pos()
         if self.type == 'moving':
            self.rect.x += self.vx
         #self.rect.x += self.vx
            if self.rect.right > WIDTH:
                 self.vx = -3
            if self.rect.left < 0:
-                self.vx = 3       
-
+                self.vx = 3
+        hits = pg.sprite.spritecollide(self, self.game.platforms, False)
+        for hit in hits:
+            if (hit != self):
+                if self.type == 'moving' or self.type == 'bee':
+                    pass
+                else:
+                    self.kill()               
+    def reset_pos(self):
+        pass
+                
 
 
 class Powerup(pg.sprite.Sprite):
@@ -222,11 +248,18 @@ class Powerup(pg.sprite.Sprite):
         self.last_update = 0 
         self.load_images()       
         self.plat = plat
-        self.type = choice(['boost', 'jump'])
+        self.type = choice(['boost', 'jump', 'bee', 'health'])
         if self.type == 'boost':
             self.image = self.fan_frames[0]
         if self.type == 'jump':
-            self.image = self.jump_frames[0]   
+            self.image = self.jump_frames[0]
+        if self.type == 'bee':
+            self.image = pg.Surface((30,30))
+            self.image.fill(SWAMP)
+        if self.type == 'health':
+            self.image = pg.image.load(path.join(self.game.img_dir, 'health.png'))
+            self.image = pg.transform.scale(self.image, (16* 2 - 4, 16* 2 - 4))
+        
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = self.plat.rect.centerx
@@ -235,9 +268,11 @@ class Powerup(pg.sprite.Sprite):
     def update(self):
         self.animate()
         self.rect.bottom = self.plat.rect.top
+        self.rect.centerx = self.plat.rect.centerx
         if not self.game.platforms.has(self.plat):
             self.kill()
-
+        if self.type == 'bee' or self.type == 'health':
+            self.rect.bottom = self.plat.rect.top - 10    
     def load_images(self):
         self.fan_frames = [self.game.spritesheet.get_image(0,238,23,8),
         self.game.spritesheet.get_image(42,238,15,8),
@@ -476,12 +511,13 @@ class Bullet(pg.sprite.Sprite):
 
 class Misc(pg.sprite.Sprite):
     def __init__(self, game , plat):              
-        self._layer = PLATFORM_LAYER
+        self._layer = TREE_LAYER
         self.groups = game.all_sprites, game.misc
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.plat = plat
-        self.image = choice([self.game.misc_sprites.get_image(149,0,66,128),self.game.misc_sprites.get_image(217,0,61,88),self.game.misc_sprites.get_image(77,109,70,88),self.game.misc_sprites.get_image(0,0,85,107),self.game.misc_sprites.get_image(0,109,75,104)])         
+        #self.game.misc_sprites.get_tree(149,0,66,128),
+        self.image = choice([self.game.misc_sprites.get_tree(217,0,61,88),self.game.misc_sprites.get_tree(77,109,70,88),self.game.misc_sprites.get_tree(0,0,85,107),self.game.misc_sprites.get_tree(0,109,75,104)])         
         #self.game.misc_sprites.get_asset(242,0,220,256), self.game.misc_sprites.origin(224,427,26,29),
         #self.game.misc_sprites.get_asset(151,360,74,37)])
         self.image.set_colorkey(BLACK)
@@ -534,3 +570,20 @@ class Saw(pg.sprite.Sprite):
 
 class Ghost(pg.sprite.Sprite):
    pass 
+
+
+class Health(pg.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = HEALTH_LAYER
+        self.groups = game.all_sprites, game.health
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.dir = path.dirname(__file__)
+        self.img_dir = path.join(self.dir, 'textures')
+        self.image = pg.image.load(path.join(self.img_dir, 'health.png')).convert_alpha()
+        self.image = pg.transform.scale(self.image, (16* 2, 16* 2))
+        #self.image.fill(RED)
+        self.rect = self.image.get_rect()
+        self.rect.left = 20
+        self.rect.top = 20
+
