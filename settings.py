@@ -12,7 +12,7 @@ FPS = 60
 FONT_NAME = 'leelawadeeuisemilight'
 HS_SCORE = 'score.txt'
 SPRITESHEET = 'sprites.png'
-BCK = 'bg.png'
+BCK = 'START.png'
 MOB_SPRITES = 'mobsprites.png'
 MISC_SPRITES = 'trees.png'
 JUMP_SPRITES = 'jumps.png'
@@ -24,8 +24,9 @@ PLAYER_JUMP = 22#22
 #powerupszzzz
 MAX_HEALTH = 3
 FAN_BOOST_POWER = 40
-POWERUP_FREQ = 5#5
-CLOUD_FREQ = 3
+POWERUP_FREQ = 5
+MOB_FREQ = 50
+CLOUD_FREQ = 1
 MOVE_PLAT_CHANCE = 3
 
 PLAYER_LAYER = 5
@@ -41,12 +42,14 @@ HEALTH_LAYER = 7
 
 
 
-PLATFORM_LIST = [(0, HEIGHT - 40),
+PLATFORM_LIST = [(0, HEIGHT - 60),
                  (WIDTH // 2 - 30, HEIGHT *3 /4),
                  (WIDTH // 2, HEIGHT -350),
                  (WIDTH - 200, HEIGHT -300),
                  (WIDTH // 2, HEIGHT - 700),
-                 (WIDTH // 2, HEIGHT - 500)
+                 (WIDTH // 2, HEIGHT - 500),
+                 (WIDTH - 356, HEIGHT - 965),
+                 (200, HEIGHT - 800)
 
 
 ]
@@ -58,3 +61,12 @@ YELLOW = (255, 255, 0)
 WHITE = (255,255,255)
 SWAMP = (87, 128, 122)
 RED = (255,0,0)
+LIME = (0,255,0)
+VIOLET = (94, 3, 252)
+PINK = (215, 3, 252)
+GREEN = (3, 252, 161)
+
+#FIRE
+ORANGE = (235, 122, 52)
+YORANGE = (235, 162, 52)
+

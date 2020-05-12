@@ -3,9 +3,7 @@ import pygame as pg
 from random import choice, randrange
 import random
 from os import path
-import time
-
-
+import time, math
 
 vc = pg.math.Vector2
 
@@ -71,8 +69,6 @@ class Player(pg.sprite.Sprite):
         self.acc = vc(0,0)
         self.healthpool = 1
 
-
-
     def update(self):
         self.animate()
         self.acc = vc(0,PLAYER_GRAVITY)
@@ -83,7 +79,7 @@ class Player(pg.sprite.Sprite):
             self.acc.x = PLAYER_ACC
         if keys[pg.K_DOWN] or keys[ord('s')]:
             self.pos.y +=30    
-
+          
         self.acc.x += self.vel.x * PLAYER_FRICTION  #friction
         self.vel += self.acc
         if abs(self.vel.x) < 0.1:
@@ -170,10 +166,6 @@ class Player(pg.sprite.Sprite):
             self.rect = self.image.get_rect()
             self.rect.bottom = bottom
 
-
-
-
-
 class Platform(pg.sprite.Sprite):
     def __init__(self, game , x, y):
         self._layer = PLATFORM_LAYER
@@ -183,13 +175,12 @@ class Platform(pg.sprite.Sprite):
         self.type = 'static'
         images = [pg.image.load(path.join(self.game.img_dir, 'static1.png')), pg.image.load(path.join(self.game.img_dir, 'static2.png'))]#, self.game.spritesheet.get_platform(0,96,201,100)]
         moving_images = [pg.image.load(path.join(self.game.img_dir, 'move.png'))]
-        #self.type = choice(['normal', 'moving'])
-        if MOVE_PLAT_CHANCE > randrange(0,20):
+        if MOVE_PLAT_CHANCE > randrange(0,25):
             self.image = choice(moving_images)
             self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
             self.type = 'moving'
 
-        elif MOVE_PLAT_CHANCE > randrange(0,10):
+        elif MOVE_PLAT_CHANCE > randrange(0,20):
             self.image = choice([pg.image.load(path.join(self.game.img_dir, 'beeplt.png'))]) 
             self.image = pg.transform.scale(self.image, (380 // 2 - 20, 94 // 2 - 20))
             self.type = 'bee' 
@@ -207,7 +198,8 @@ class Platform(pg.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.vx = randrange(1,5)
-        
+        if randrange(100) < MOB_FREQ and self.type == 'static':
+            Peashooter(self.game, self)     
         if randrange(100) < POWERUP_FREQ:
             Powerup(self.game, self)
         if self.rect.width > 100:    
@@ -235,9 +227,7 @@ class Platform(pg.sprite.Sprite):
                     self.kill()               
     def reset_pos(self):
         pass
-                
-
-
+            
 class Powerup(pg.sprite.Sprite):
     def __init__(self, game , plat):                # WORK ON ADDING SHIELDS
         self._layer = POWERUP_LAYER
@@ -248,14 +238,13 @@ class Powerup(pg.sprite.Sprite):
         self.last_update = 0 
         self.load_images()       
         self.plat = plat
-        self.type = choice(['boost', 'jump', 'bee', 'health'])
+        self.type = choice(['boost', 'jump', 'jetpack', 'health'])
         if self.type == 'boost':
             self.image = self.fan_frames[0]
         if self.type == 'jump':
             self.image = self.jump_frames[0]
-        if self.type == 'bee':
-            self.image = pg.Surface((30,30))
-            self.image.fill(SWAMP)
+        if self.type == 'jetpack':
+            self.image = pg.image.load(path.join(self.game.img_dir, 'rocket.png'))
         if self.type == 'health':
             self.image = pg.image.load(path.join(self.game.img_dir, 'health.png'))
             self.image = pg.transform.scale(self.image, (16* 2 - 4, 16* 2 - 4))
@@ -326,7 +315,7 @@ class Mob(pg.sprite.Sprite):
         self.vx = randrange(1, 3)
         if self.rect.centerx > WIDTH:
             self.vx *= -1
-        self.rect.y = randrange(HEIGHT / 2)
+        self.rect.y = randrange(100, HEIGHT / 2 - 200)
         self.vy = 0
         self.dy = 0.5
 
@@ -363,8 +352,6 @@ class Mob(pg.sprite.Sprite):
                 self.current_frame = (self.current_frame + 1) % len(self.bird_img)
                 self.image = self.bird_img[self.current_frame]
 
-
-
 class Cloud(pg.sprite.Sprite):
     def __init__(self, game):
         self._layer = CLOUD_LAYER
@@ -384,7 +371,7 @@ class Cloud(pg.sprite.Sprite):
             self.kill()
 
 class Background(pg.sprite.Sprite):
-    def __init__(self, game):
+    def __init__(self, game, y):
         self._layer = BACKGROUND_LAYER
         self.groups = game.all_sprites, game.backgrounds
         pg.sprite.Sprite.__init__(self, self.groups)
@@ -394,9 +381,7 @@ class Background(pg.sprite.Sprite):
         self.image = pg.image.load(path.join(self.img_dir, BCK)).convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.x = 0
-        self.rect.y = -3200
-    def update(self):
-        pass    
+        self.rect.y = y
 
 class Bee(pg.sprite.Sprite):
     def __init__(self,game):
@@ -412,11 +397,8 @@ class Bee(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = WIDTH // 2
         self.vx = 3
-        self.rect.y = 15  
+        self.rect.y = 25  
         self.attack = False             
-
-
-        #self.rect.x = self.game.WIDTH // 2
 
     def load_images(self):
         self.fly_frames = [
@@ -445,12 +427,10 @@ class Bee(pg.sprite.Sprite):
     def update(self):
         self.animate()
         self.rect.x += self.vx
-        #self.rect.x += self.vx
         if self.rect.right > WIDTH:
             self.vx = -3
         if self.rect.left < 0:
             self.vx = 3    
-        #if self.game.player.rect.x + 30 >= self.rect.x >= self.game.player.rect.x - 30:
         if not self.bullet_ratio < randrange(0,100):
             self.attack = True
             self.shoot()
@@ -472,7 +452,6 @@ class Bee(pg.sprite.Sprite):
                     self.last_update = now
                     self.current_frame = (self.current_frame + 1) % len(self.fly_frames)
                     self.image = self.fly_frames[self.current_frame]
-                    #self.rect = self.image.get_rect()
         if self.attack:
             now = pg.time.get_ticks()
             if now - self.last_update > 40:
@@ -481,13 +460,9 @@ class Bee(pg.sprite.Sprite):
                     self.image = self.attack_frames[self.current_frame]            
 
     def shoot(self):
-        print('TARGET')
+        #print('TARGET')
         bullet = Bullet(self.game,self.rect.centerx, self.rect.bottom)
         self.game.shoot_sound.play()
-
-            
-        #self.game.bullets.add(bullet)
-
 
 class Bullet(pg.sprite.Sprite):
     def __init__(self,game, x, y):
@@ -516,10 +491,7 @@ class Misc(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.plat = plat
-        #self.game.misc_sprites.get_tree(149,0,66,128),
         self.image = choice([self.game.misc_sprites.get_tree(217,0,61,88),self.game.misc_sprites.get_tree(77,109,70,88),self.game.misc_sprites.get_tree(0,0,85,107),self.game.misc_sprites.get_tree(0,109,75,104)])         
-        #self.game.misc_sprites.get_asset(242,0,220,256), self.game.misc_sprites.origin(224,427,26,29),
-        #self.game.misc_sprites.get_asset(151,360,74,37)])
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.centerx = randrange(self.plat.rect.left + 30, self.plat.rect.right - 30)
@@ -540,7 +512,6 @@ class Saw(pg.sprite.Sprite):
         self.type = 'saw'
         self.load_images()
         self.image = self.saw_frames[0]
-        #self.image = pg.transform.rotate(self.image, 180)
         self.rect = self.image.get_rect()
         self.rect.centerx = self.plat.rect.centerx
         self.rect.y = self.plat.rect.top
@@ -568,10 +539,6 @@ class Saw(pg.sprite.Sprite):
             self.current_frame = (self.current_frame + 1) % len(self.saw_frames)
             self.image = self.saw_frames[self.current_frame]
 
-class Ghost(pg.sprite.Sprite):
-   pass 
-
-
 class Health(pg.sprite.Sprite):
     def __init__(self, game):
         self._layer = HEALTH_LAYER
@@ -582,8 +549,130 @@ class Health(pg.sprite.Sprite):
         self.img_dir = path.join(self.dir, 'textures')
         self.image = pg.image.load(path.join(self.img_dir, 'health.png')).convert_alpha()
         self.image = pg.transform.scale(self.image, (16* 2, 16* 2))
-        #self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.rect.left = 20
         self.rect.top = 20
 
+class newBack(pg.sprite.Sprite):
+    def __init__(self, game, y):
+        self._layer = BACKGROUND_LAYER
+        self.groups = game.all_sprites, game.backgrounds
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.dir = path.dirname(__file__)
+        self.img_dir = path.join(self.dir, 'textures')
+        self.image = choice([pg.image.load(path.join(self.img_dir, 'back1.png')),pg.image.load(path.join(self.img_dir, 'back2.png')),pg.image.load(path.join(self.img_dir, 'back3.png')),pg.image.load(path.join(self.img_dir, 'back4.png')),pg.image.load(path.join(self.img_dir, 'back5.png'))])  
+        self.rect = self.image.get_rect()
+        self.rect.x = 0
+        self.rect.y = y
+
+class Jetpack(pg.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = POWERUP_LAYER
+        self.groups = game.all_sprites, game.jets
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.type = 'jet'
+        self.image = pg.image.load(path.join(self.game.img_dir, 'rocket.png')).convert_alpha()
+        self.image = pg.transform.scale(self.image, (18, 32 * 2))
+        self.rect = self.image.get_rect()
+        self.rect.y = self.game.player.rect.centery - 28
+        self.rect.x = self.game.player.rect.centerx - 4.5
+    def update(self):  
+        self.rect.y = self.game.player.rect.centery - 28
+        self.rect.x = self.game.player.rect.centerx - 4.5       
+class Fuel(pg.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = HEALTH_LAYER
+        self.groups = game.all_sprites, game.jets
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game 
+        self.image = pg.image.load(path.join(self.game.img_dir,'fuel.png'))
+        self.rect = self.image.get_rect()
+        self.rect.x = -15
+        self.rect.y = 100 
+    def update(self):
+        #self.image2.fill(self.game.color)  
+        self.rect.x = -15
+        self.rect.y = 100
+################################ PEASHOOTER ###################################
+class Peashooter(pg.sprite.Sprite):
+    def __init__(self, game, plat):
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.shooters
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.plat = plat
+        self.image = pg.image.load(path.join(self.game.img_dir,'plant_base.png'))
+        self.image = pg.transform.scale(self.image, (50, 44))
+        self.rect = self.image.get_rect()
+        self.rect.bottom = self.plat.rect.top
+        self.rect.centerx = self.plat.rect.centerx
+        Peashooter_head(self.game, self)
+    def update(self):
+        self.rect.bottom = self.plat.rect.top 
+        self.rect.centerx = self.plat.rect.centerx   
+        if not self.game.platforms.has(self.plat):
+            self.kill()
+class Peashooter_head(pg.sprite.Sprite):
+    def __init__(self, game, shooter):
+        self._layer = MOB_LAYER
+        self.groups = game.all_sprites, game.shooter_heads
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.shooter = shooter
+        self.image = pg.image.load(path.join(self.game.img_dir,'head.png'))  
+        self.image = pg.transform.scale(self.image, (50, 43))  
+        self.rect = self.image.get_rect()
+        self.rect.bottom = self.shooter.rect.top - 5  
+        self.rect.centerx = self.shooter.rect.centerx
+        self.rotated_image = self.image.copy()
+        self.angle = 0
+    def update(self):
+        self.rotate()
+        if not self.game.shooters.has(self.shooter):
+            self.kill()
+        self.rect.bottom = self.shooter.rect.top + 15  
+        self.rect.centerx = self.shooter.rect.centerx 
+        if random.randint(1,100) < 2:
+            Peashooter_bullet(self.game, self) 
+            print('bang')  
+    def rotate(self):
+        player_x = self.game.player.rect.x + self.game.player.rect.width
+        player_y = self.game.player.rect.y + self.game.player.rect.height
+        player_x2 = self.game.player.rect.x
+        player_y2 = self.game.player.rect.y
+        #self.pos = vc(self.rect.x, self.rect.y)
+        #print(self.pos)
+        rel_x, rel_y = player_x - self.rect.x, player_y - self.rect.y
+        rel_x2, rel_y2 = player_x2 - self.rect.x, player_y2 - self.rect.y
+        self.angle = -math.atan2(rel_y2, rel_x2) * 57.2958 + 180
+        self.dirx = rel_x #math.sqrt(rel_x * rel_x + rel_y * rel_y) * 3
+        self.diry = rel_y #math.sqrt(rel_x * rel_x + rel_y * rel_y) * 3
+        self.image = pygame.transform.rotate(self.rotated_image, int(self.angle))
+        self.rect = self.image.get_rect()
+        #print(player_x , ' ', player_y, ' ', self.rect.centerx, ' ', self.rect.centery)
+        #print(self.game.player.pos)
+class Peashooter_bullet(pg.sprite.Sprite):
+    def __init__(self, game, head):
+        self._layer = PLATFORM_LAYER
+        self.groups = game.all_sprites, game.peabullets
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        self.head = head
+        self.image = pg.image.load(path.join(self.game.img_dir,'Pea.png'))
+        self.image = pg.transform.scale(self.image, (32, 32)) 
+        self.rect = self.image.get_rect()
+        self.rect.center = self.head.rect.centerx, self.head.rect.centery
+        self.pmx = self.game.player.rect.centerx
+        self.pmy = self.game.player.rect.centery
+        self.dirx = self.head.dirx
+        self.diry = self.head.diry
+    def update(self):
+        self.shoot()
+        if (self.rect.x > WIDTH or self.rect.x < 10) or (self.rect.y > HEIGHT or self.rect.y < 10) :
+            self.kill()
+    def shoot(self):
+        self.rect.x += self.dirx / 100.0
+        self.rect.y += self.diry / 100.0
+         
