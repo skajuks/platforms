@@ -1,1 +1,0 @@
-install shoebox and bfxr
